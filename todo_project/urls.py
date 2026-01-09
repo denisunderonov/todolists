@@ -14,9 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
+from django.contrib import admin  # Админ-панель Django
+from django.urls import path, include  # Для создания URL путей
+from django.conf import settings  # Настройки проекта
+from django.conf.urls.static import static  # Для раздачи медиа-файлов в режиме разработки
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),  # Админ-панель: http://127.0.0.1:8000/admin/
+    path('api/', include('tasks.urls')),  # API приложения tasks: http://127.0.0.1:8000/api/
+    path('api-auth/', include('rest_framework.urls')),  # Аутентификация DRF (для browsable API)
 ]
+
+# Раздача медиа-файлов в режиме разработки (DEBUG=True)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Доступ к загруженным изображениям
