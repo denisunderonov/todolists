@@ -68,8 +68,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # Используем PostgreSQL
         'NAME': 'todo_db',  # Название базы данных
-        'USER': 'postgres',  # Имя пользователя БД
-        'PASSWORD': 'postgres',  # Пароль пользователя БД
+        'USER': 'a1111',  # Имя пользователя БД (текущий пользователь macOS)
+        'PASSWORD': '',  # Пароль (для локальной БД без пароля)
         'HOST': 'localhost',  # Хост (localhost для локальной разработки)
         'PORT': '5432',  # Порт PostgreSQL по умолчанию
     }
