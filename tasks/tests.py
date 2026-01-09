@@ -1,3 +1,2 @@
-from django.test import TestCase
-
-# Create your tests here.
+# Здесь будут тесты для приложения tasks
+# from django.test import TestCase

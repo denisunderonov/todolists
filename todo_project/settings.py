@@ -19,13 +19,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',  # Система сессий
     'django.contrib.messages',  # Система сообщений
     'django.contrib.staticfiles',  # Управление статическими файлами (CSS, JS, изображения)
-    
+
     # Сторонние приложения
     'rest_framework',  # Django REST Framework для создания API
     'django_filters',  # Фильтрация данных в API
     'simple_history',  # Отслеживание истории изменений объектов
     'import_export',  # Импорт и экспорт данных в Excel
-    
+
     # Наши приложения
     'tasks',  # Приложение для управления задачами
 ]

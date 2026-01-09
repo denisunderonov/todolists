@@ -1,0 +1,26 @@
+[flake8]
+# Максимальная длина строки
+max-line-length = 120
+
+# Исключаем папки из проверки
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    env,
+    migrations,
+    staticfiles,
+    media,
+    .vscode
+
+# Игнорируем некоторые ошибки
+ignore =
+    E501,
+    W503,
+    E203
+
+# Показывать имя файла и номер строки
+show-source = True
+
+# Показывать статистику
+statistics = True

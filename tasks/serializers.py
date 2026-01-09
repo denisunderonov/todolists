@@ -8,7 +8,7 @@ class PrioritySerializer(serializers.ModelSerializer):
     class Meta:
         model = Priority  # Модель для сериализации
         fields = '__all__'  # Все поля модели
-        
+
     def validate_level(self, value):  # Кастомная валидация уровня приоритета
         """Проверяем, что уровень приоритета в диапазоне 1-5"""
         if value < 1 or value > 5:  # Если уровень вне диапазона
@@ -26,7 +26,7 @@ class StatusSerializer(serializers.ModelSerializer):
 # Сериализатор для модели Tag (Тег)
 class TagSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)  # Добавляем имя пользователя (только чтение)
-    
+
     class Meta:
         model = Tag
         fields = ['id', 'name', 'color', 'user', 'user_username']  # Указываем поля явно
@@ -39,12 +39,12 @@ class TagSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)  # Имя владельца
     tasks_count = serializers.SerializerMethodField()  # Кастомное поле - количество задач
-    
+
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'owner', 'owner_username', 'tasks_count', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']  # Эти поля только для чтения
-        
+
     def get_tasks_count(self, obj):  # Метод для получения количества задач
         """Возвращает количество задач в проекте"""
         return obj.tasks.count()
@@ -53,7 +53,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 # Упрощенный сериализатор для Project (для вложенных объектов)
 class ProjectListSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
-    
+
     class Meta:
         model = Project
         fields = ['id', 'name', 'owner_username']
@@ -67,7 +67,7 @@ class TaskSerializer(serializers.ModelSerializer):
     assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True)  # Имя ответственного
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)  # Кто создал
     tags_list = TagSerializer(source='tags', many=True, read_only=True)  # Список тегов (вложенный сериализатор)
-    
+
     class Meta:
         model = Task
         fields = [
@@ -78,14 +78,14 @@ class TaskSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_username'
         ]
         read_only_fields = ['created_at', 'updated_at']
-        
+
     def validate_due_date(self, value):  # Кастомная валидация даты окончания
         """Проверяем, что дата окончания не раньше текущей даты"""
         from django.utils import timezone  # Импортируем для работы с датами
         if value and value < timezone.now():  # Если дата в прошлом
             raise serializers.ValidationError('Дата окончания не может быть в прошлом')
         return value
-    
+
     def validate(self, data):  # Общая валидация всех полей сразу
         """Проверяем уникальность названия задачи для пользователя"""
         request = self.context.get('request')  # Получаем request из контекста
@@ -103,7 +103,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
     status_name = serializers.CharField(source='status.name', read_only=True)
     priority_name = serializers.CharField(source='priority.name', read_only=True)
-    
+
     class Meta:
         model = Task
         fields = ['id', 'title', 'project_name', 'status_name', 'priority_name', 'due_date', 'created_at']

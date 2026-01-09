@@ -19,19 +19,19 @@ class PriorityResource(resources.ModelResource):
 @admin.register(Priority)
 class PriorityAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):  # Подключаем экспорт и историю
     resource_class = PriorityResource  # Класс для экспорта
-    
+
     list_display = ('id', 'name', 'level', 'colored_level')  # Поля в списке объектов
     list_display_links = ('id', 'name')  # Поля-ссылки на детальную страницу
     list_filter = ('level',)  # Фильтры в боковой панели
     search_fields = ('name',)  # Поля для поиска
     ordering = ('level',)  # Сортировка по умолчанию
-    
+
     fieldsets = (  # Группировка полей на странице редактирования
         ('Основная информация', {  # Название группы
             'fields': ('name', 'level')  # Поля в группе
         }),
     )
-    
+
     @admin.display(description='Уровень (цветной)')  # Описание колонки в админке
     def colored_level(self, obj):  # Собственный метод для отображения уровня с цветом
         colors = {1: '#28a745', 2: '#17a2b8', 3: '#ffc107', 4: '#fd7e14', 5: '#dc3545'}  # Цвета по уровням
@@ -54,18 +54,18 @@ class StatusResource(resources.ModelResource):
 @admin.register(Status)
 class StatusAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     resource_class = StatusResource
-    
+
     list_display = ('id', 'name', 'color_display')  # Поля в списке
     list_display_links = ('id', 'name')
     search_fields = ('name',)
     ordering = ('name',)
-    
+
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'color')
         }),
     )
-    
+
     @admin.display(description='Цвет (превью)')  # Кастомный метод для отображения цвета
     def color_display(self, obj):
         return format_html(  # Показываем квадратик с цветом
@@ -86,26 +86,26 @@ class TagResource(resources.ModelResource):
 @admin.register(Tag)
 class TagAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     resource_class = TagResource
-    
+
     list_display = ('id', 'name', 'color_preview', 'user_link')  # Поля в списке
     list_display_links = ('id', 'name')
     list_filter = ('user', 'color')  # Фильтры
     search_fields = ('name', 'user__username')  # Поиск по имени тега и имени пользователя
     raw_id_fields = ('user',)  # Виджет для выбора пользователя (удобно при большом количестве)
-    
+
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'color', 'user')
         }),
     )
-    
+
     @admin.display(description='Цвет')
     def color_preview(self, obj):
         return format_html(
             '<span style="background-color: {}; padding: 3px 10px; border-radius: 3px; color: white;">{}</span>',
             obj.color, obj.name
         )
-    
+
     @admin.display(description='Пользователь')  # Гиперссылка на пользователя
     def user_link(self, obj):
         url = reverse('admin:auth_user_change', args=[obj.user.id])  # URL страницы пользователя
@@ -134,7 +134,7 @@ class TaskInline(admin.TabularInline):  # Табличное отображен�
 @admin.register(Project)
 class ProjectAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     resource_class = ProjectResource
-    
+
     list_display = ('id', 'name', 'owner_link', 'tasks_count', 'created_at', 'updated_at')  # Поля в списке
     list_display_links = ('id', 'name')
     list_filter = ('owner', 'created_at')  # Фильтры
@@ -142,7 +142,7 @@ class ProjectAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     raw_id_fields = ('owner',)
     readonly_fields = ('created_at', 'updated_at')  # Поля только для чтения
     date_hierarchy = 'created_at'  # Навигация по датам вверху списка
-    
+
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'description', 'owner')
@@ -152,14 +152,14 @@ class ProjectAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
             'classes': ('collapse',)  # Свернутая секция
         }),
     )
-    
+
     inlines = [TaskInline]  # Встроенное отображение задач
-    
+
     @admin.display(description='Владелец')  # Ссылка на владельца
     def owner_link(self, obj):
         url = reverse('admin:auth_user_change', args=[obj.owner.id])
         return format_html('<a href="{}">{}</a>', url, obj.owner.username)
-    
+
     @admin.display(description='Количество задач')  # Кастомный метод: количество задач в проекте
     def tasks_count(self, obj):
         count = obj.tasks.count()  # Подсчитываем задачи через related_name
@@ -168,19 +168,19 @@ class ProjectAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
 
 # Ресурс для экспорта Task в Excel с кастомизацией
 class TaskResource(resources.ModelResource):
-    
+
     # Метод 1: get_export_queryset - фильтруем только задачи с высоким приоритетом (4-5)
     def get_export_queryset(self, queryset):
         """Экспортируем только задачи с высоким приоритетом (уровень >= 4)"""
         return queryset.filter(priority__level__gte=4).select_related('project', 'priority', 'status', 'assigned_to')
-    
+
     # Метод 2: dehydrate_due_date - преобразуем дату в формат DD-MM-YYYY
     def dehydrate_due_date(self, task):
         """Преобразуем дату в формат DD-MM-YYYY HH:MM"""
         if task.due_date:
             return task.due_date.strftime('%d-%m-%Y %H:%M')  # Форматируем дату
         return 'Без срока'  # Если даты нет
-    
+
     # Метод 3: get_status - преобразуем статус в читаемый формат
     def get_status(self, task):
         """Преобразуем статус в читаемый формат с эмодзи"""
@@ -195,7 +195,7 @@ class TaskResource(resources.ModelResource):
             emoji = status_emoji.get(task.status.name, '📋')  # Получаем эмодзи или дефолтный
             return f'{emoji} {task.status.name}'  # Возвращаем статус с эмодзи
         return '❓ Без статуса'
-    
+
     class Meta:
         model = Task
         fields = ('id', 'title', 'project__name', 'priority__name', 'status', 'assigned_to__username', 'due_date', 'created_at')
@@ -206,7 +206,7 @@ class TaskResource(resources.ModelResource):
 @admin.register(Task)
 class TaskAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     resource_class = TaskResource
-    
+
     list_display = ('id', 'title', 'project_link', 'status', 'priority_display', 'assigned_to_link', 'due_date', 'created_at')  # Поля в списке
     list_display_links = ('id', 'title')
     list_filter = ('status', 'priority', 'project', 'created_at', 'due_date')  # Фильтры
@@ -215,7 +215,7 @@ class TaskAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
     readonly_fields = ('created_at', 'updated_at', 'image_preview')  # Поля только для чтения
     filter_horizontal = ('tags',)  # Виджет для ManyToMany (удобный выбор тегов)
     date_hierarchy = 'created_at'  # Навигация по датам
-    
+
     fieldsets = (
         ('Основная информация', {
             'fields': ('title', 'description', 'project')
@@ -232,12 +232,12 @@ class TaskAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     @admin.display(description='Проект')  # Ссылка на проект
     def project_link(self, obj):
         url = reverse('admin:tasks_project_change', args=[obj.project.id])
         return format_html('<a href="{}">{}</a>', url, obj.project.name)
-    
+
     @admin.display(description='Приоритет')  # Цветной приоритет
     def priority_display(self, obj):
         if obj.priority:
@@ -248,14 +248,14 @@ class TaskAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
                 color, obj.priority.name
             )
         return '-'
-    
+
     @admin.display(description='Назначена')  # Ссылка на пользователя
     def assigned_to_link(self, obj):
         if obj.assigned_to:
             url = reverse('admin:auth_user_change', args=[obj.assigned_to.id])
             return format_html('<a href="{}">{}</a>', url, obj.assigned_to.username)
         return '-'
-    
+
     @admin.display(description='Превью изображения')  # Превью прикрепленного изображения
     def image_preview(self, obj):
         if obj.image:

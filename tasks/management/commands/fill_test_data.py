@@ -7,17 +7,17 @@ from datetime import timedelta  # Для работы с временными и
 
 class Command(BaseCommand):
     help = 'Заполняет базу данных тестовыми данными (приоритеты, статусы, проекты, задачи)'  # Описание команды
-    
+
     def add_arguments(self, parser):  # Добавляем аргументы команды
         parser.add_argument(  # Аргумент --clear для очистки данных перед заполнением
             '--clear',
             action='store_true',  # Это флаг (True/False)
             help='Очистить существующие данные перед заполнением',
         )
-    
+
     def handle(self, *args, **options):  # Основная логика команды
         """Выполнение команды"""
-        
+
         # Если передан флаг --clear, очищаем данные
         if options['clear']:
             self.stdout.write(self.style.WARNING('Очистка существующих данных...'))  # Выводим предупреждение
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             Status.objects.all().delete()  # Удаляем все статусы
             Priority.objects.all().delete()  # Удаляем все приоритеты
             self.stdout.write(self.style.SUCCESS('✓ Данные очищены'))
-        
+
         # Создаем приоритеты
         self.stdout.write('Создание приоритетов...')
         priorities_data = [  # Данные для приоритетов
@@ -37,14 +37,14 @@ class Command(BaseCommand):
             {'name': 'Высокий', 'level': 4},
             {'name': 'Критический', 'level': 5},
         ]
-        
+
         priorities = {}  # Словарь для хранения созданных приоритетов
         for data in priorities_data:
             priority, created = Priority.objects.get_or_create(**data)  # Создаем или получаем существующий
             priorities[data['level']] = priority  # Сохраняем в словарь
             if created:
                 self.stdout.write(f'  ✓ Создан приоритет: {priority.name}')
-        
+
         # Создаем статусы
         self.stdout.write('Создание статусов...')
         statuses_data = [
@@ -54,14 +54,14 @@ class Command(BaseCommand):
             {'name': 'Завершена', 'color': '#28a745'},  # Зеленый
             {'name': 'Отменена', 'color': '#dc3545'},  # Красный
         ]
-        
+
         statuses = {}
         for data in statuses_data:
             status, created = Status.objects.get_or_create(**data)
             statuses[data['name']] = status
             if created:
                 self.stdout.write(f'  ✓ Создан статус: {status.name}')
-        
+
         # Получаем или создаем пользователя
         self.stdout.write('Проверка пользователя...')
         user, created = User.objects.get_or_create(
@@ -78,7 +78,7 @@ class Command(BaseCommand):
             self.stdout.write(f'  ✓ Создан пользователь: {user.username}')
         else:
             self.stdout.write(f'  → Пользователь уже существует: {user.username}')
-        
+
         # Создаем теги
         self.stdout.write('Создание тегов...')
         tags_data = [
@@ -87,7 +87,7 @@ class Command(BaseCommand):
             {'name': 'Срочно', 'color': '#dc3545', 'user': user},
             {'name': 'Важно', 'color': '#ffc107', 'user': user},
         ]
-        
+
         tags = {}
         for data in tags_data:
             tag, created = Tag.objects.get_or_create(
@@ -98,7 +98,7 @@ class Command(BaseCommand):
             tags[data['name']] = tag
             if created:
                 self.stdout.write(f'  ✓ Создан тег: {tag.name}')
-        
+
         # Создаем проекты
         self.stdout.write('Создание проектов...')
         projects_data = [
@@ -118,7 +118,7 @@ class Command(BaseCommand):
                 'owner': user
             },
         ]
-        
+
         projects = {}
         for data in projects_data:
             project, created = Project.objects.get_or_create(
@@ -129,11 +129,11 @@ class Command(BaseCommand):
             projects[data['name']] = project
             if created:
                 self.stdout.write(f'  ✓ Создан проект: {project.name}')
-        
+
         # Создаем задачи
         self.stdout.write('Создание задач...')
         today = timezone.now()  # Текущая дата и время
-        
+
         tasks_data = [
             {
                 'title': 'Создать дизайн главной страницы',
@@ -181,7 +181,7 @@ class Command(BaseCommand):
                 'tags': [tags['Работа'], tags['Срочно']],
             },
         ]
-        
+
         for data in tasks_data:
             tags_list = data.pop('tags')  # Извлекаем теги отдельно
             task, created = Task.objects.get_or_create(
@@ -196,7 +196,7 @@ class Command(BaseCommand):
             if created:
                 task.tags.set(tags_list)  # Устанавливаем теги (ManyToMany)
                 self.stdout.write(f'  ✓ Создана задача: {task.title}')
-        
+
         # Итоговая статистика
         self.stdout.write(self.style.SUCCESS('\n=== Заполнение завершено ==='))
         self.stdout.write(f'Приоритетов: {Priority.objects.count()}')
