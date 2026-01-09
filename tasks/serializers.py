@@ -105,12 +105,23 @@ class TaskSerializer(serializers.ModelSerializer):
 # Упрощенный сериализатор для списка задач
 class TaskListSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
-    status_name = serializers.CharField(source='status.name', read_only=True)
     priority_name = serializers.CharField(source='priority.name', read_only=True)
+    priority_details = PrioritySerializer(source='priority', read_only=True)
+    status_name = serializers.CharField(source='status.name', read_only=True)
+    status_details = StatusSerializer(source='status', read_only=True)
+    assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True)
+    tags_details = TagSerializer(source='tags', many=True, read_only=True)
 
     class Meta:
         model = Task
-        fields = ['id', 'title', 'project_name', 'status_name', 'priority_name', 'due_date', 'created_at']
+        fields = [
+            'id', 'title', 'description', 'project', 'project_name',
+            'priority_name', 'priority_details',
+            'status_name', 'status_details',
+            'assigned_to_username', 'due_date',
+            'tags_details',
+            'created_at'
+        ]
 
 
 # Сериализатор для User (для отображения в API)

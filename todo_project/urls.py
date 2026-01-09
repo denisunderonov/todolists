@@ -18,12 +18,15 @@ from django.contrib import admin  # Админ-панель Django
 from django.urls import path, include  # Для создания URL путей
 from django.conf import settings  # Настройки проекта
 from django.conf.urls.static import static  # Для раздачи медиа-файлов в режиме разработки
+from django.contrib.auth import views as auth_views  # Встроенные views для аутентификации
 from tasks.views import home_view, projects_view, tasks_view  # HTML views
 
 urlpatterns = [
     path('', home_view, name='home'),  # Главная страница
     path('projects/', projects_view, name='projects'),  # Страница проектов
     path('tasks/', tasks_view, name='tasks'),  # Страница задач
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),  # Страница входа
+    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),  # Выход
     path('admin/', admin.site.urls),  # Админ-панель: http://127.0.0.1:8000/admin/
     path('api/', include('tasks.urls')),  # API приложения tasks: http://127.0.0.1:8000/api/
     path('api-auth/', include('rest_framework.urls')),  # Аутентификация DRF (для browsable API)

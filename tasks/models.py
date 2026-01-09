@@ -7,6 +7,7 @@ from simple_history.models import HistoricalRecords  # Для отслежива
 class Priority(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name='Название')  # Название приоритета (например, "Низкий", "Высокий")
     level = models.IntegerField(unique=True, verbose_name='Уровень')  # Числовой уровень приоритета (1-5)
+    color = models.CharField(max_length=7, default='#6c757d', verbose_name='Цвет')  # Цвет в формате HEX для визуализации
 
     history = HistoricalRecords()  # Отслеживание истории изменений
 

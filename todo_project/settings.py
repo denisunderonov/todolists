@@ -130,3 +130,9 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',  # Сортировка по полям
     ],
 }
+
+# Authentication settings
+LOGIN_REDIRECT_URL = 'home'  # Перенаправление после входа
+LOGOUT_REDIRECT_URL = 'home'  # Перенаправление после выхода
+LOGIN_URL = 'login'  # URL страницы входа
+

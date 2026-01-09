@@ -92,6 +92,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(projects, many=True)  # Сериализуем список
         return Response(serializer.data)  # Возвращаем JSON
 
+    @action(detail=True, methods=['get'])
+    def tasks(self, request, pk=None):
+        """GET /api/projects/{id}/tasks/ - Получить задачи конкретного проекта"""
+        project = self.get_object()
+        tasks = Task.objects.filter(project=project).select_related(
+            'priority', 'status', 'assigned_to', 'created_by'
+        ).prefetch_related('tags')
+
+        from .serializers import TaskSerializer
+        serializer = TaskSerializer(tasks, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])  # Дополнительный метод для объекта (detail=True)
     def archive(self, request, pk=None):
         """POST /api/projects/{id}/archive/ - Архивировать проект (пример)"""

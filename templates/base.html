@@ -75,30 +75,93 @@
         }
 
         .priority-badge {
-            font-weight: 500;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
             display: inline-block;
+            color: white !important;
+            border: none;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
         }
 
         .status-badge {
-            font-weight: 500;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
             display: inline-block;
+            color: white !important;
+            border: none;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
         }
 
         .tag-badge {
             background: var(--light);
             color: var(--dark);
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
             margin-right: 0.5rem;
             display: inline-block;
             margin-bottom: 0.25rem;
+            font-weight: 600;
+            color: white !important;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+        }
+
+        /* Navbar and burger menu styles */
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+            outline: none;
+        }
+
+        .navbar-toggler-icon {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            vertical-align: middle;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(44, 62, 80, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100%;
+        }
+
+        .navbar-collapse {
+            background: #fff;
+        }
+
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                border-top: 1px solid var(--border);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                z-index: 1000;
+                padding: 0.5rem 0;
+            }
+            
+            .navbar-collapse .nav {
+                flex-direction: column !important;
+            }
+            
+            .navbar-collapse .nav-link {
+                padding: 0.75rem 1rem !important;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .navbar-collapse .nav-link:last-child {
+                border-bottom: none;
+            }
         }
 
         .btn {
@@ -252,15 +315,30 @@
     <div class="app-header">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-6">
-                    <h1 class="app-title">TODO List</h1>
+                <div class="col-6 col-lg-4">
+                    <h1 class="app-title mb-0">TODO List</h1>
                 </div>
-                <div class="col-6">
-                    <nav class="nav justify-content-end">
-                        <a class="nav-link" href="{% url 'home' %}">Главная</a>
-                        <a class="nav-link" href="{% url 'projects' %}">Проекты</a>
-                        <a class="nav-link" href="{% url 'tasks' %}">Задачи</a>
-                        <a class="nav-link" href="/admin/">Админ</a>
+                <div class="col-6 col-lg-8">
+                    <nav class="navbar navbar-expand-lg navbar-light p-0">
+                        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <div class="nav ms-auto">
+                                <a class="nav-link" href="{% url 'home' %}">Главная</a>
+                                <a class="nav-link" href="{% url 'projects' %}">Проекты</a>
+                                <a class="nav-link" href="{% url 'tasks' %}">Задачи</a>
+                                <a class="nav-link" href="/admin/">Админ</a>
+                                {% if user.is_authenticated %}
+                                    <span class="nav-link text-muted">
+                                        <i class="bi bi-person-circle"></i> {{ user.username }}
+                                    </span>
+                                    <a class="nav-link" href="{% url 'logout' %}">Выйти</a>
+                                {% else %}
+                                    <a class="nav-link" href="{% url 'login' %}">Войти</a>
+                                {% endif %}
+                            </div>
+                        </div>
                     </nav>
                 </div>
             </div>
@@ -324,6 +402,38 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        // Получить цвет для приоритета
+        function getPriorityColor(priority) {
+            if (!priority) return '#6c757d';
+            return priority.color || '#6c757d';
+        }
+
+        // Получить цвет для статуса
+        function getStatusColor(status) {
+            if (!status) return '#6c757d';
+            const statusColors = {
+                'Новая': '#0d6efd',
+                'В работе': '#ffc107',
+                'На проверке': '#fd7e14',
+                'Завершена': '#198754',
+                'Отменена': '#dc3545'
+            };
+            return status.color || statusColors[status.name] || '#6c757d';
+        }
+
+        // Получить цвет для тега
+        function getTagColor(tag) {
+            if (!tag) return '#6c757d';
+            const tagColors = {
+                'Срочно': '#dc3545',
+                'Важно': '#fd7e14',
+                'Багфикс': '#e83e8c',
+                'Фича': '#20c997',
+                'Документация': '#6f42c1'
+            };
+            return tag.color || tagColors[tag.name] || '#0dcaf0';
         }
 
         // Показать уведомление
