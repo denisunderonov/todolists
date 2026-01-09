@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+
+{% block title %}Задачи - TODO List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Задачи</h2>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                    Создать задачу
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Фильтры -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-md-3">
+                        <select class="form-select form-select-sm" id="filterProject" onchange="loadTasks()">
+                            <option value="">Все проекты</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select class="form-select form-select-sm" id="filterStatus" onchange="loadTasks()">
+                            <option value="">Все статусы</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select class="form-select form-select-sm" id="filterPriority" onchange="loadTasks()">
+                            <option value="">Все приоритеты</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <input type="search" class="form-control form-control-sm" id="searchTask" placeholder="Поиск..." onkeyup="loadTasks()">
+                    </div>
+                </div>
+
+                <div id="tasksList" class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать новую задачу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createTaskForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskTitle" class="form-label">Название *</label>
+                            <input type="text" class="form-control" id="taskTitle" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskProject" class="form-label">Проект *</label>
+                            <select class="form-select" id="taskProject" required>
+                                <option value="">Загрузка...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="taskDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="taskPriority" class="form-label">Приоритет *</label>
+                            <select class="form-select" id="taskPriority" required>
+                                <option value="">Загрузка...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="taskStatus" class="form-label">Статус *</label>
+                            <select class="form-select" id="taskStatus" required>
+                                <option value="">Загрузка...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="taskDueDate" class="form-label">Срок выполнения *</label>
+                            <input type="date" class="form-control" id="taskDueDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskTags" class="form-label">Теги</label>
+                            <select class="form-select" id="taskTags" multiple size="3">
+                                <option value="">Загрузка...</option>
+                            </select>
+                            <small class="text-muted">Удерживайте Ctrl для множественного выбора</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskAssignedTo" class="form-label">Назначить</label>
+                            <select class="form-select" id="taskAssignedTo">
+                                <option value="">Не назначена</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="createTask()">Создать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно изменения статуса -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-repeat"></i> Изменить статус
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newStatus" class="form-label">Новый статус</label>
+                    <select class="form-select" id="newStatus">
+                        <option value="">Загрузка...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="confirmChangeStatus()">Изменить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTaskId = null;
+let projects = [];
+let priorities = [];
+let statuses = [];
+let tags = [];
+let users = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        await loadFiltersData();
+        await loadTasks();
+    } catch (error) {
+        handleApiError(error);
+    }
+    
+    // Установить минимальную дату на сегодня
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('taskDueDate').setAttribute('min', today);
+});
+
+async function loadFiltersData() {
+    try {
+        const [projectsRes, prioritiesRes, statusesRes, tagsRes] = await Promise.all([
+            axios.get('projects/'),
+            axios.get('priorities/'),
+            axios.get('statuses/'),
+            axios.get('tags/')
+        ]);
+        
+        projects = projectsRes.data.results || projectsRes.data;
+        priorities = prioritiesRes.data.results || prioritiesRes.data;
+        statuses = statusesRes.data.results || statusesRes.data;
+        tags = tagsRes.data.results || tagsRes.data;
+        users = [{id: 1, username: 'admin'}, {id: 2, username: 'testuser'}];
+        
+        // Заполнить фильтры
+        document.getElementById('filterProject').innerHTML = `
+            <option value="">Все проекты</option>
+            ${projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+        `;
+        
+        document.getElementById('filterStatus').innerHTML = `
+            <option value="">Все статусы</option>
+            ${statuses.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+        `;
+        
+        document.getElementById('filterPriority').innerHTML = `
+            <option value="">Все приоритеты</option>
+            ${priorities.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        `;
+        
+        // Заполнить формы создания
+        document.getElementById('taskProject').innerHTML = 
+            projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        
+        document.getElementById('taskPriority').innerHTML = 
+            priorities.map(p => `<option value="${p.id}">${p.name} (${p.level})</option>`).join('');
+        
+        document.getElementById('taskStatus').innerHTML = 
+            statuses.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+        document.getElementById('taskTags').innerHTML = 
+            tags.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        
+        document.getElementById('taskAssignedTo').innerHTML = `
+            <option value="">Не назначена</option>
+            ${users.map(u => `<option value="${u.id}">${u.username}</option>`).join('')}
+        `;
+        
+        // Заполнить модалку изменения статуса
+        document.getElementById('newStatus').innerHTML = 
+            statuses.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+async function loadTasks() {
+    try {
+        // Собрать параметры фильтрации
+        const params = new URLSearchParams();
+        
+        const projectFilter = document.getElementById('filterProject').value;
+        if (projectFilter) params.append('project', projectFilter);
+        
+        const statusFilter = document.getElementById('filterStatus').value;
+        if (statusFilter) params.append('status', statusFilter);
+        
+        const priorityFilter = document.getElementById('filterPriority').value;
+        if (priorityFilter) params.append('priority', priorityFilter);
+        
+        const search = document.getElementById('searchTask').value.trim();
+        if (search) params.append('search', search);
+        
+        const url = `tasks/${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await axios.get(url);
+        const tasks = response.data.results || response.data;
+        
+        const container = document.getElementById('tasksList');
+        
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-list-task"></i>
+                    <p>Задач не найдено</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = tasks.map(task => `
+            <div class="card mb-2">
+                <div class="card-body p-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
+                                <h6 class="mb-0">${task.title}</h6>
+                                <span class="priority-badge" style="background-color: ${task.priority_details?.color || '#ccc'}; color: white;">
+                                    ${task.priority_details?.name || 'Приоритет'}
+                                </span>
+                            </div>
+                            
+                            <p class="text-muted small mb-2">${task.description ? (task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description) : 'Нет описания'}</p>
+                            
+                            <div class="mb-2">
+                                <span class="badge bg-secondary me-1 small">
+                                    ${task.project_title || 'Проект #' + task.project}
+                                </span>
+                                <span class="status-badge me-1 small" style="background-color: #6c757d; color: white;">
+                                    ${task.status_details?.name || 'Статус'}
+                                </span>
+                                ${(task.tags_details || []).map(tag => `
+                                    <span class="tag-badge small">
+                                        ${tag.name}
+                                    </span>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="text-muted small">
+                                <span class="me-2">
+                                    Срок: ${formatDate(task.due_date)}
+                                </span>
+                                ${task.assigned_to_username ? `
+                                    <span class="me-2">
+                                        ${task.assigned_to_username}
+                                    </span>
+                                ` : ''}
+                                <span>
+                                    ${formatDate(task.created_at)}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 d-flex flex-column gap-2 mt-2 mt-md-0">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openChangeStatus(${task.id})">
+                                Сменить статус
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="viewHistory(${task.id})">
+                                История
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        document.getElementById('tasksList').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки задач</div>
+        `;
+        handleApiError(error);
+    }
+}
+
+async function createTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDescription').value.trim();
+    const project = document.getElementById('taskProject').value;
+    const priority = document.getElementById('taskPriority').value;
+    const status = document.getElementById('taskStatus').value;
+    const dueDate = document.getElementById('taskDueDate').value;
+    const assignedTo = document.getElementById('taskAssignedTo').value;
+    
+    const tagsSelect = document.getElementById('taskTags');
+    const selectedTags = Array.from(tagsSelect.selectedOptions).map(opt => parseInt(opt.value));
+    
+    if (!title || !project || !priority || !status || !dueDate) {
+        showNotification('Заполните все обязательные поля', 'warning');
+        return;
+    }
+    
+    try {
+        const taskData = {
+            title,
+            description,
+            project: parseInt(project),
+            priority: parseInt(priority),
+            status: parseInt(status),
+            due_date: dueDate,
+            tags: selectedTags
+        };
+        
+        if (assignedTo) {
+            taskData.assigned_to = parseInt(assignedTo);
+        }
+        
+        await axios.post('tasks/', taskData);
+        
+        showNotification('Задача успешно создана!', 'success');
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
+        modal.hide();
+        
+        document.getElementById('createTaskForm').reset();
+        
+        await loadTasks();
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+function openChangeStatus(taskId) {
+    currentTaskId = taskId;
+    const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+    modal.show();
+}
+
+async function confirmChangeStatus() {
+    const newStatus = document.getElementById('newStatus').value;
+    
+    if (!newStatus) {
+        showNotification('Выберите новый статус', 'warning');
+        return;
+    }
+    
+    try {
+        await axios.post(`tasks/${currentTaskId}/change_status/`, {
+            status: parseInt(newStatus)
+        });
+        
+        showNotification('Статус успешно изменен!', 'success');
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('changeStatusModal'));
+        modal.hide();
+        
+        await loadTasks();
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+async function deleteTask(id) {
+    if (!confirm('Вы уверены, что хотите удалить эту задачу?')) {
+        return;
+    }
+    
+    try {
+        await axios.delete(`tasks/${id}/`);
+        showNotification('Задача удалена', 'success');
+        await loadTasks();
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+async function viewHistory(taskId) {
+    try {
+        const response = await axios.get(`tasks/${taskId}/history/`);
+        const history = response.data;
+        
+        let historyHtml = '<div class="timeline">';
+        
+        if (history.length === 0) {
+            historyHtml = '<p class="text-muted">История изменений пуста</p>';
+        } else {
+            historyHtml += history.map(item => `
+                <div class="mb-3 p-3 border-start border-primary border-3 bg-light">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong>${item.history_user || 'Система'}</strong>
+                        <small class="text-muted">${formatDateTime(item.history_date)}</small>
+                    </div>
+                    <div><small class="text-muted">Тип: ${item.history_type}</small></div>
+                    ${item.history_change_reason ? `<div class="mt-1"><em>${item.history_change_reason}</em></div>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        historyHtml += '</div>';
+        
+        // Показать в alert (можно создать отдельную модалку)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = `
+            <div class="modal fade" id="historyModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-clock-history"></i> История изменений задачи
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${historyHtml}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(tempDiv);
+        const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+        modal.show();
+        
+        document.getElementById('historyModal').addEventListener('hidden.bs.modal', function() {
+            tempDiv.remove();
+        });
+    } catch (error) {
+        showNotification('Не удалось загрузить историю', 'danger');
+    }
+}
+</script>
+{% endblock %}

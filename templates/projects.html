@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Проекты - TODO List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Проекты</h2>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+                    Создать проект
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="projectsList" class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания проекта -->
+<div class="modal fade" id="createProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать новый проект</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createProjectForm">
+                    <div class="mb-3">
+                        <label for="projectTitle" class="form-label">Название *</label>
+                        <input type="text" class="form-control" id="projectTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="projectDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectOwner" class="form-label">Владелец *</label>
+                        <select class="form-select" id="projectOwner" required>
+                            <option value="">Загрузка...</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">Создать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно просмотра задач проекта -->
+<div class="modal fade" id="projectTasksModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="projectTasksTitle">
+                    <i class="bi bi-list-task"></i> Задачи проекта
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="projectTasksList" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let users = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        await loadUsers();
+        await loadProjects();
+    } catch (error) {
+        handleApiError(error);
+    }
+});
+
+async function loadUsers() {
+    try {
+        // В реальном API нужно создать эндпоинт для пользователей
+        // Пока используем заглушку
+        users = [{id: 1, username: 'admin'}, {id: 2, username: 'testuser'}];
+        
+        const select = document.getElementById('projectOwner');
+        select.innerHTML = users.map(user => 
+            `<option value="${user.id}">${user.username}</option>`
+        ).join('');
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+async function loadProjects() {
+    try {
+        const response = await axios.get('projects/');
+        const projects = response.data.results || response.data;
+        
+        const container = document.getElementById('projectsList');
+        
+        if (projects.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-folder-plus"></i>
+                    <p>Проектов пока нет. Создайте первый!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="row">
+                ${projects.map(project => `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            ${project.image ? `
+                                <img src="${project.image}" class="card-img-top" alt="${project.title}" style="height: 150px; object-fit: cover;">
+                            ` : ''}
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title mb-2">${project.title}</h6>
+                                <p class="card-text text-muted small flex-grow-1">${project.description ? (project.description.length > 80 ? project.description.substring(0, 80) + '...' : project.description) : 'Нет описания'}</p>
+                                
+                                <div class="mb-2 small text-muted">
+                                    <div>${project.owner_username || 'Владелец #' + project.owner}</div>
+                                    <div>${formatDate(project.created_at)} · ${project.tasks_count || 0} задач</div>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewProjectTasks(${project.id}, '${project.title}')">
+                                        Задачи
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteProject(${project.id})">
+                                        Удалить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('projectsList').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки проектов</div>
+        `;
+        handleApiError(error);
+    }
+}
+
+async function createProject() {
+    const title = document.getElementById('projectTitle').value.trim();
+    const description = document.getElementById('projectDescription').value.trim();
+    const owner = document.getElementById('projectOwner').value;
+    
+    if (!title || !owner) {
+        showNotification('Заполните все обязательные поля', 'warning');
+        return;
+    }
+    
+    try {
+        await axios.post('projects/', {
+            title,
+            description,
+            owner: parseInt(owner)
+        });
+        
+        showNotification('Проект успешно создан!', 'success');
+        
+        // Закрыть модалку
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+        modal.hide();
+        
+        // Очистить форму
+        document.getElementById('createProjectForm').reset();
+        
+        // Перезагрузить список
+        await loadProjects();
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+async function deleteProject(id) {
+    if (!confirm('Вы уверены, что хотите удалить этот проект?')) {
+        return;
+    }
+    
+    try {
+        await axios.delete(`projects/${id}/`);
+        showNotification('Проект удален', 'success');
+        await loadProjects();
+    } catch (error) {
+        handleApiError(error);
+    }
+}
+
+async function viewProjectTasks(projectId, projectTitle) {
+    document.getElementById('projectTasksTitle').innerHTML = 
+        `<i class="bi bi-list-task"></i> Задачи проекта: ${projectTitle}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('projectTasksModal'));
+    modal.show();
+    
+    try {
+        const response = await axios.get(`projects/${projectId}/tasks/`);
+        const tasks = response.data.results || response.data;
+        
+        const container = document.getElementById('projectTasksList');
+        
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-list-task"></i>
+                    <p>Задач в этом проекте пока нет</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = tasks.map(task => `
+            <div class="mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${task.title}</h6>
+                    <span class="priority-badge" style="background-color: ${task.priority_details?.color || '#ccc'}">
+                        ${task.priority_details?.name || 'Приоритет'}
+                    </span>
+                </div>
+                <p class="text-muted small mb-2">${task.description || 'Нет описания'}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="status-badge bg-info text-white">
+                        ${task.status_details?.name || 'Статус'}
+                    </span>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> ${formatDate(task.due_date)}
+                    </small>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        document.getElementById('projectTasksList').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки задач</div>
+        `;
+        handleApiError(error);
+    }
+}
+</script>
+{% endblock %}

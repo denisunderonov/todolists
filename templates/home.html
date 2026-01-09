@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - TODO List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Статистика -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Статистика</h2>
+            </div>
+            <div class="card-body">
+                <div class="row text-center" id="stats">
+                    <div class="col-6 col-md-3 mb-3 mb-md-0">
+                        <div class="p-2">
+                            <h3 class="h4 mb-1" id="projectsCount">-</h3>
+                            <p class="text-muted mb-0 small">Проектов</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-3 mb-md-0">
+                        <div class="p-2">
+                            <h3 class="h4 mb-1" id="tasksCount">-</h3>
+                            <p class="text-muted mb-0 small">Всего задач</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2">
+                            <h3 class="h4 mb-1" id="completedCount">-</h3>
+                            <p class="text-muted mb-0 small">Завершено</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2">
+                            <h3 class="h4 mb-1" id="overdueCount">-</h3>
+                            <p class="text-muted mb-0 small">Просрочено</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Срочные задачи -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Срочные задачи</h3>
+            </div>
+            <div class="card-body">
+                <div id="urgentTasks" class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Просроченные задачи -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Просроченные</h3>
+            </div>
+            <div class="card-body">
+                <div id="overdueTasks" class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние проекты -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Последние проекты</h3>
+                <a href="{% url 'projects' %}" class="btn btn-sm btn-outline-primary">
+                    Все проекты
+                </a>
+            </div>
+            <div class="card-body">
+                <div id="recentProjects" class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Загрузка статистики
+        await loadStats();
+        
+        // Загрузка срочных задач
+        await loadUrgentTasks();
+        
+        // Загрузка просроченных задач
+        await loadOverdueTasks();
+        
+        // Загрузка последних проектов
+        await loadRecentProjects();
+    } catch (error) {
+        handleApiError(error);
+    }
+});
+
+async function loadStats() {
+    try {
+        const [projects, tasks, overdue] = await Promise.all([
+            axios.get('projects/'),
+            axios.get('tasks/'),
+            axios.get('tasks/overdue/')
+        ]);
+        
+        document.getElementById('projectsCount').textContent = projects.data.count || projects.data.length;
+        document.getElementById('tasksCount').textContent = tasks.data.count || tasks.data.results?.length || 0;
+        
+        // Подсчет завершенных задач
+        const allTasks = tasks.data.results || tasks.data;
+        const completed = allTasks.filter(task => 
+            task.status_details?.name === 'Завершена' || task.status_details?.name === 'Выполнена'
+        ).length;
+        document.getElementById('completedCount').textContent = completed;
+        
+        // Просроченные
+        const overdueCount = overdue.data.count || overdue.data.tasks?.length || 0;
+        document.getElementById('overdueCount').textContent = overdueCount;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadUrgentTasks() {
+    try {
+        const response = await axios.get('tasks/urgent_or_tomorrow/');
+        const tasks = response.data.results || response.data;
+        
+        const container = document.getElementById('urgentTasks');
+        
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">✓</div>
+                    <p class="mb-0">Срочных задач нет</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = tasks.slice(0, 5).map(task => `
+            <div class="mb-2 p-2 border rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">${task.title}</div>
+                        <small class="text-muted">${task.project_title || 'Без проекта'}</small>
+                    </div>
+                    <span class="priority-badge ms-2" style="background-color: ${task.priority_details?.color || '#ccc'}; color: white;">
+                        ${task.priority_details?.name || 'Приоритет'}
+                    </span>
+                </div>
+                <div>
+                    <small class="text-muted">${formatDate(task.due_date)}</small>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        document.getElementById('urgentTasks').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки данных</div>
+        `;
+    }
+}
+
+async function loadOverdueTasks() {
+    try {
+        const response = await axios.get('tasks/overdue/');
+        const data = response.data;
+        const tasks = data.tasks || data.results || data;
+        
+        const container = document.getElementById('overdueTasks');
+        
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">✓</div>
+                    <p class="mb-0">Просроченных задач нет</p>
+                </div>
+            `;
+            return;
+        }        
+        container.innerHTML = tasks.slice(0, 5).map(task => `
+            <div class="mb-2 p-2 border rounded" style="border-left: 3px solid var(--danger) !important;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">${task.title}</div>
+                        <small class="text-muted">${task.project_title || 'Без проекта'}</small>
+                    </div>
+                    <span class="badge bg-danger ms-2">
+                        Просрочена
+                    </span>
+                </div>
+                <div>
+                    <small class="text-danger">${formatDate(task.due_date)}</small>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        document.getElementById('overdueTasks').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки данных</div>
+        `;
+    }
+}
+
+async function loadRecentProjects() {
+    try {
+        const response = await axios.get('projects/');
+        const projects = response.data.results || response.data;
+        
+        const container = document.getElementById('recentProjects');
+        
+        if (projects.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">+</div>
+                    <p class="mb-0">Проектов пока нет</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="row">
+                ${projects.slice(0, 4).map(project => `
+                    <div class="col-md-6 col-lg-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title mb-2">${project.title}</h6>
+                                <p class="card-text text-muted small mb-3">${project.description ? (project.description.length > 60 ? project.description.substring(0, 60) + '...' : project.description) : 'Нет описания'}</p>
+                                <div class="d-flex justify-content-between align-items-center small text-muted">
+                                    <span>${project.tasks_count || 0} задач</span>
+                                    <span>${formatDate(project.created_at)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('recentProjects').innerHTML = `
+            <div class="alert alert-danger">Ошибка загрузки данных</div>
+        `;
+    }
+}
+</script>
+{% endblock %}

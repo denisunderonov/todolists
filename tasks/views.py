@@ -1,3 +1,4 @@
+from django.shortcuts import render  # Для рендеринга HTML шаблонов
 from django.db.models import Q  # Для сложных запросов с OR, AND, NOT
 from django.utils import timezone  # Для работы с датами и временем
 from rest_framework import viewsets, status  # Базовые классы для API и статусы ответов
@@ -11,6 +12,22 @@ from .serializers import (  # Наши сериализаторы
     ProjectSerializer, ProjectListSerializer,
     TaskSerializer, TaskListSerializer
 )
+
+
+# Views для рендеринга HTML страниц
+def home_view(request):
+    """Главная страница"""
+    return render(request, 'home.html')
+
+
+def projects_view(request):
+    """Страница проектов"""
+    return render(request, 'projects.html')
+
+
+def tasks_view(request):
+    """Страница задач"""
+    return render(request, 'tasks.html')
 
 
 # ViewSet для Priority (Приоритет)

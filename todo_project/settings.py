@@ -47,7 +47,7 @@ ROOT_URLCONF = 'todo_project.urls'  # Главный файл маршрутов
 TEMPLATES = [  # Настройки шаблонов (HTML)
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',  # Движок шаблонов Django
-        'DIRS': [],  # Дополнительные папки с шаблонами
+        'DIRS': [BASE_DIR / 'templates'],  # Папка с шаблонами в корне проекта
         'APP_DIRS': True,  # Искать шаблоны в папках приложений
         'OPTIONS': {
             'context_processors': [  # Процессоры контекста (передают данные в шаблоны)
