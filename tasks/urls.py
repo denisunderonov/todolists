@@ -12,6 +12,7 @@ router.register(r'statuses', views.StatusViewSet, basename='status')  # /api/sta
 router.register(r'tags', views.TagViewSet, basename='tag')  # /api/tags/
 router.register(r'projects', views.ProjectViewSet, basename='project')  # /api/projects/
 router.register(r'tasks', views.TaskViewSet, basename='task')  # /api/tasks/
+router.register(r'users', views.UserViewSet, basename='user')  # /api/users/
 
 # URL patterns для приложения tasks
 urlpatterns = [

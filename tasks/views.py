@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.db.models import Q  # Для сложных запросов с OR, AND, NOT
 from django.utils import timezone  # Для работы с датами и временем
+from django.contrib.auth.models import User  # Модель пользователя
 from rest_framework import viewsets, status  # Базовые классы для API и статусы ответов
 from rest_framework.decorators import action  # Декоратор для дополнительных методов
 from rest_framework.response import Response  # Для возврата JSON ответов
@@ -10,7 +11,7 @@ from .models import Priority, Status, Tag, Project, Task  # Наши модел�
 from .serializers import (  # Наши сериализаторы
     PrioritySerializer, StatusSerializer, TagSerializer,
     ProjectSerializer, ProjectListSerializer,
-    TaskSerializer, TaskListSerializer
+    TaskSerializer, TaskListSerializer, UserSerializer
 )
 
 
@@ -251,3 +252,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             })
 
         return Response(history_data)
+
+
+# ViewSet для User (Пользователь)
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для просмотра пользователей (только чтение)"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    search_fields = ['username', 'email']
+    ordering_fields = ['username', 'date_joined']
+    ordering = ['username']

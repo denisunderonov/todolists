@@ -94,9 +94,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadUsers() {
     try {
-        // В реальном API нужно создать эндпоинт для пользователей
-        // Пока используем заглушку
-        users = [{id: 1, username: 'admin'}, {id: 2, username: 'testuser'}];
+        const response = await axios.get('users/');
+        users = response.data.results || response.data;
         
         const select = document.getElementById('projectOwner');
         select.innerHTML = users.map(user => 

@@ -168,23 +168,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadFiltersData() {
     try {
-        const [projectsRes, prioritiesRes, statusesRes, tagsRes] = await Promise.all([
+        const [projectsRes, prioritiesRes, statusesRes, tagsRes, usersRes] = await Promise.all([
             axios.get('projects/'),
             axios.get('priorities/'),
             axios.get('statuses/'),
-            axios.get('tags/')
+            axios.get('tags/'),
+            axios.get('users/')
         ]);
         
         projects = projectsRes.data.results || projectsRes.data;
         priorities = prioritiesRes.data.results || prioritiesRes.data;
         statuses = statusesRes.data.results || statusesRes.data;
         tags = tagsRes.data.results || tagsRes.data;
-        users = [{id: 1, username: 'admin'}, {id: 2, username: 'testuser'}];
+        users = usersRes.data.results || usersRes.data;
         
         // Заполнить фильтры
         document.getElementById('filterProject').innerHTML = `
             <option value="">Все проекты</option>
-            ${projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+            ${projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
         `;
         
         document.getElementById('filterStatus').innerHTML = `
