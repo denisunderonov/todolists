@@ -169,15 +169,32 @@ class ProjectAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
 # Ресурс для экспорта Task в Excel с кастомизацией
 class TaskResource(resources.ModelResource):
     
-    def dehydrate_due_date(self, task):  # Кастомизация поля due_date при экспорте
-        """Преобразуем дату в формат DD-MM-YYYY"""
-        if task.due_date:
-            return task.due_date.strftime('%d-%m-%Y %H:%M')
-        return ''
+    # Метод 1: get_export_queryset - фильтруем только задачи с высоким приоритетом (4-5)
+    def get_export_queryset(self, queryset):
+        """Экспортируем только задачи с высоким приоритетом (уровень >= 4)"""
+        return queryset.filter(priority__level__gte=4).select_related('project', 'priority', 'status', 'assigned_to')
     
-    def get_status(self, task):  # Кастомизация поля status
-        """Преобразуем статус в читаемый формат"""
-        return task.status.name if task.status else 'Без статуса'
+    # Метод 2: dehydrate_due_date - преобразуем дату в формат DD-MM-YYYY
+    def dehydrate_due_date(self, task):
+        """Преобразуем дату в формат DD-MM-YYYY HH:MM"""
+        if task.due_date:
+            return task.due_date.strftime('%d-%m-%Y %H:%M')  # Форматируем дату
+        return 'Без срока'  # Если даты нет
+    
+    # Метод 3: get_status - преобразуем статус в читаемый формат
+    def get_status(self, task):
+        """Преобразуем статус в читаемый формат с эмодзи"""
+        if task.status:
+            status_emoji = {  # Словарь соответствия статусов и эмодзи
+                'Новая': '🆕',
+                'В работе': '⚙️',
+                'На проверке': '🔍',
+                'Завершена': '✅',
+                'Отменена': '❌',
+            }
+            emoji = status_emoji.get(task.status.name, '📋')  # Получаем эмодзи или дефолтный
+            return f'{emoji} {task.status.name}'  # Возвращаем статус с эмодзи
+        return '❓ Без статуса'
     
     class Meta:
         model = Task
