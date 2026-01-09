@@ -438,44 +438,72 @@ async function viewHistory(taskId) {
         const response = await axios.get(`tasks/${taskId}/history/`);
         const history = response.data;
         
+        console.log('История задачи:', history); // Для отладки
+        
         let historyHtml = '<div class="timeline">';
         
         if (history.length === 0) {
             historyHtml = '<p class="text-muted">История изменений пуста</p>';
         } else {
-            historyHtml += history.map(item => `
+            historyHtml += history.map(item => {
+                // Определяем тип изменения
+                let changeTypeText = 'Неизвестно';
+                let changeTypeBadge = 'secondary';
+                
+                if (item.history_type === '+') {
+                    changeTypeText = 'Создание';
+                    changeTypeBadge = 'success';
+                } else if (item.history_type === '~') {
+                    changeTypeText = 'Изменение';
+                    changeTypeBadge = 'warning';
+                } else if (item.history_type === '-') {
+                    changeTypeText = 'Удаление';
+                    changeTypeBadge = 'danger';
+                }
+                
+                return `
                 <div class="mb-3 p-3 border-start border-primary border-3 bg-light">
-                    <div class="d-flex justify-content-between mb-1">
-                        <strong>${item.history_user || 'Система'}</strong>
-                        <small class="text-muted">${formatDateTime(item.history_date)}</small>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <strong><i class="bi bi-person-circle"></i> ${item.history_user || 'Система'}</strong>
+                            <span class="badge bg-${changeTypeBadge} ms-2">${changeTypeText}</span>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> ${formatDateTime(item.history_date)}
+                        </small>
                     </div>
-                    <div><small class="text-muted">Тип: ${
-                        item.history_type === '+' ? 'Создание' :
-                        item.history_type === '~' ? 'Изменение' :
-                        item.history_type === '-' ? 'Удаление' :
-                        item.history_type || 'Неизвестно'
-                    }</small></div>
-                    ${item.history_change_reason ? `<div class="mt-1"><em>${item.history_change_reason}</em></div>` : ''}
+                    <div class="ms-3">
+                        <div><strong>Название:</strong> ${item.title || 'Без названия'}</div>
+                        ${item.status ? `<div><strong>Статус:</strong> ${item.status}</div>` : ''}
+                        ${item.priority ? `<div><strong>Приоритет:</strong> ${item.priority}</div>` : ''}
+                        ${item.history_change_reason ? `<div class="mt-2"><em><i class="bi bi-chat-left-text"></i> ${item.history_change_reason}</em></div>` : ''}
+                    </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
         
         historyHtml += '</div>';
         
-        // Показать в alert (можно создать отдельную модалку)
+        // Показать в модалке
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = `
             <div class="modal fade" id="historyModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header">
+                        <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title">
                                 <i class="bi bi-clock-history"></i> История изменений задачи
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                             ${historyHtml}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle"></i> Закрыть
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -490,6 +518,7 @@ async function viewHistory(taskId) {
             tempDiv.remove();
         });
     } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
         showNotification('Не удалось загрузить историю', 'danger');
     }
 }

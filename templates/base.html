@@ -394,7 +394,10 @@
         }
 
         function formatDateTime(dateString) {
+            if (!dateString) return 'Неизвестно';
             const date = new Date(dateString);
+            // Проверяем, что дата валидна
+            if (isNaN(date.getTime())) return 'Некорректная дата';
             return date.toLocaleString('ru-RU', {
                 year: 'numeric',
                 month: 'long',

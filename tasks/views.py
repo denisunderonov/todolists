@@ -258,9 +258,12 @@ class TaskViewSet(viewsets.ModelViewSet):
                 'id': record.history_id,
                 'title': record.title,
                 'status': record.status.name if record.status else None,
-                'changed_at': record.history_date,
-                'changed_by': record.history_user.username if record.history_user else 'Система',
-                'change_type': record.get_history_type_display()  # Created, Changed, Deleted
+                'priority': record.priority.name if record.priority else None,
+                'history_date': record.history_date.isoformat(),  # Форматируем дату в ISO формат
+                'history_user': record.history_user.username if record.history_user else None,
+                'history_type': record.history_type,  # +, ~, -
+                'history_change_reason': record.history_change_reason if hasattr(record, 'history_change_reason') else None,
+                'change_type_display': record.get_history_type_display()  # Created, Changed, Deleted
             })
 
         return Response(history_data)
