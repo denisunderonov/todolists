@@ -1,4 +1,5 @@
 from pathlib import Path
+import os  # Для работы с переменными окружения
 
 # Определяем базовую директорию проекта
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,7 +8,7 @@ SECRET_KEY = 'django-insecure-%p8jy93-kt9^^ws46bi0^gvo7k$utehzg!n#w@)ll_nynu%qwg
 
 DEBUG = True
 
-ALLOWED_HOSTS = []  # Список разрешенных хостов (в продакшене указать домен)
+ALLOWED_HOSTS = ['*']  # Разрешаем все хосты для разработки и Docker
 
 
 # Определение приложений
@@ -63,15 +64,16 @@ WSGI_APPLICATION = 'todo_project.wsgi.application'  # WSGI приложение 
 
 
 # База данных
+# Поддержка переменных окружения для Docker
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # Используем PostgreSQL
-        'NAME': 'todo_db',  # Название базы данных
-        'USER': 'a1111',  # Имя пользователя БД (текущий пользователь macOS)
-        'PASSWORD': '',  # Пароль (для локальной БД без пароля)
-        'HOST': 'localhost',  # Хост (localhost для локальной разработки)
-        'PORT': '5432',  # Порт PostgreSQL по умолчанию
+        'NAME': os.environ.get('DATABASE_NAME', 'todo_db'),  # Из переменной окружения или 'todo_db'
+        'USER': os.environ.get('DATABASE_USER', 'a1111'),  # Из переменной окружения или 'a1111'
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),  # Из переменной окружения или пусто
+        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),  # Из переменной окружения или 'localhost'
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),  # Из переменной окружения или '5432'
     }
 }
 
