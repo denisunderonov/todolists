@@ -1,4 +1,4 @@
-from django.shortcuts import render  # Для рендеринга HTML шаблонов
+from django.shortcuts import render
 from django.db.models import Q  # Для сложных запросов с OR, AND, NOT
 from django.utils import timezone  # Для работы с датами и временем
 from rest_framework import viewsets, status  # Базовые классы для API и статусы ответов

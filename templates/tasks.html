@@ -273,7 +273,7 @@ async function loadTasks() {
                             
                             <div class="mb-2">
                                 <span class="badge bg-secondary me-1 small">
-                                    ${task.project_title || 'Проект #' + task.project}
+                                    ${task.project_name || 'Проект #' + task.project}
                                 </span>
                                 <span class="status-badge me-1 small" style="background-color: #6c757d; color: white;">
                                     ${task.status_details?.name || 'Статус'}
@@ -386,7 +386,7 @@ async function confirmChangeStatus() {
     
     try {
         await axios.post(`tasks/${currentTaskId}/change_status/`, {
-            status: parseInt(newStatus)
+            status_id: parseInt(newStatus)
         });
         
         showNotification('Статус успешно изменен!', 'success');

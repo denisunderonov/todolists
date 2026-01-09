@@ -58,6 +58,7 @@ class Project(models.Model):
     name = models.CharField(max_length=200, verbose_name='Название')  # Название проекта
     description = models.TextField(blank=True, null=True, verbose_name='Описание')  # Описание проекта (необязательное)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_projects', verbose_name='Владелец')  # Владелец проекта
+    image = models.ImageField(upload_to='projects/', null=True, blank=True, verbose_name='Изображение')  # Изображение проекта
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')  # Автоматически заполняется при создании
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')  # Автоматически обновляется при изменении
 

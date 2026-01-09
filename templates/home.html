@@ -162,7 +162,7 @@ async function loadUrgentTasks() {
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="flex-grow-1">
                         <div class="fw-medium">${task.title}</div>
-                        <small class="text-muted">${task.project_title || 'Без проекта'}</small>
+                        <small class="text-muted">${task.project_name || 'Без проекта'}</small>
                     </div>
                     <span class="priority-badge ms-2" style="background-color: ${task.priority_details?.color || '#ccc'}; color: white;">
                         ${task.priority_details?.name || 'Приоритет'}
@@ -202,7 +202,7 @@ async function loadOverdueTasks() {
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="flex-grow-1">
                         <div class="fw-medium">${task.title}</div>
-                        <small class="text-muted">${task.project_title || 'Без проекта'}</small>
+                        <small class="text-muted">${task.project_name || 'Без проекта'}</small>
                     </div>
                     <span class="badge bg-danger ms-2">
                         Просрочена
@@ -243,7 +243,7 @@ async function loadRecentProjects() {
                     <div class="col-md-6 col-lg-3 mb-3">
                         <div class="card h-100">
                             <div class="card-body">
-                                <h6 class="card-title mb-2">${project.title}</h6>
+                                <h6 class="card-title mb-2">${project.name}</h6>
                                 <p class="card-text text-muted small mb-3">${project.description ? (project.description.length > 60 ? project.description.substring(0, 60) + '...' : project.description) : 'Нет описания'}</p>
                                 <div class="d-flex justify-content-between align-items-center small text-muted">
                                     <span>${project.tasks_count || 0} задач</span>
