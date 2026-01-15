@@ -6,7 +6,7 @@ services:
     image: postgres:15
     container_name: todo_db
     environment:
-      POSTGRES_DB: todo_db
+      POSTGRES_DB: a1111
       POSTGRES_USER: a1111
       POSTGRES_PASSWORD: yourpassword  # Измените на свой пароль
     volumes:
@@ -31,7 +31,7 @@ services:
     environment:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
-      - DATABASE_NAME=todo_db
+      - DATABASE_NAME=a1111
       - DATABASE_USER=a1111
       - DATABASE_PASSWORD=yourpassword  # Измените на свой пароль
     depends_on:
