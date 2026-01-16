@@ -1,5 +1,6 @@
 from pathlib import Path
 import os  # Для работы с переменными окружения
+import dj_database_url  # Для парсинга DATABASE_URL
 
 # Определяем базовую директорию проекта
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -66,18 +67,29 @@ WSGI_APPLICATION = 'todo_project.wsgi.application'  # WSGI приложение 
 
 
 # База данных
-# Поддержка переменных окружения для Docker
+# Поддержка DATABASE_URL для production (Render, Heroku и т.д.)
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # Используем PostgreSQL
-        'NAME': os.environ.get('DATABASE_NAME', 'todo_db'),  # Из переменной окружения или 'todo_db'
-        'USER': os.environ.get('DATABASE_USER', 'a1111'),  # Из переменной окружения или 'a1111'
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),  # Из переменной окружения или пусто
-        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),  # Из переменной окружения или 'localhost'
-        'PORT': os.environ.get('DATABASE_PORT', '5432'),  # Из переменной окружения или '5432'
+if os.environ.get('DATABASE_URL'):
+    # Используем DATABASE_URL если он установлен (production)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Fallback для локальной разработки
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',  # Используем PostgreSQL
+            'NAME': os.environ.get('DATABASE_NAME', 'todo_db'),  # Из переменной окружения или 'todo_db'
+            'USER': os.environ.get('DATABASE_USER', 'a1111'),  # Из переменной окружения или 'a1111'
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),  # Из переменной окружения или пусто
+            'HOST': os.environ.get('DATABASE_HOST', 'localhost'),  # Из переменной окружения или 'localhost'
+            'PORT': os.environ.get('DATABASE_PORT', '5432'),  # Из переменной окружения или '5432'
+        }
+    }
 
 
 # Валидаторы паролей
