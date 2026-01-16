@@ -198,8 +198,8 @@ class TaskResource(resources.ModelResource):
 
     class Meta:
         model = Task
-        fields = ('id', 'title', 'project__name', 'priority__name', 'status', 'assigned_to__username', 'due_date', 'created_at')
-        export_order = ('id', 'title', 'project__name', 'priority__name', 'status', 'assigned_to__username', 'due_date', 'created_at')
+        fields = ('id', 'title', 'имя проекта', 'priority__name', 'status', 'assigned_to__username', 'due_date', 'created_at')
+        export_order = ('id', 'title', 'имя проекта', 'priority__name', 'status', 'assigned_to__username', 'due_date', 'created_at')
 
 
 # Админка для модели Task (Задача)
