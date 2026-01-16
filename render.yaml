@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: todo-list-app
+    runtime: python
+    runtimeVersion: 3.9
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
+    startCommand: gunicorn todo_project.wsgi:application
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "0.0.0.0"
+      - key: DATABASE_ENGINE
+        value: django.db.backends.postgresql
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: postgres
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: postgres
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: postgres
+          property: database
+      - key: DATABASE_USER
+        fromDatabase:
+          name: postgres
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: postgres
+          property: password
+
+databases:
+  - name: postgres
+    ipAllowList: []

@@ -1,6 +1,11 @@
 # Используем официальный Python образ
 FROM python:3.9-slim
 
+# Устанавливаем переменные окружения
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
@@ -8,13 +13,17 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
 # Копируем весь проект
 COPY . .
 
-# Открываем порт для Django
+# Собираем статические файлы
+RUN python manage.py collectstatic --noinput --clear
+
+# Открываем порт
 EXPOSE 8000
 
-# Команда для запуска сервера
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Команда для запуска сервера с gunicorn
+CMD ["gunicorn", "--config", "gunicorn_config.py", "todo_project.wsgi:application"]

@@ -4,11 +4,12 @@ import os  # Для работы с переменными окружения
 # Определяем базовую директорию проекта
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-%p8jy93-kt9^^ws46bi0^gvo7k$utehzg!n#w@)ll_nynu%qwg'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-%p8jy93-kt9^^ws46bi0^gvo7k$utehzg!n#w@)ll_nynu%qwg')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']  # Разрешаем все хосты для разработки и Docker
+# ALLOWED_HOSTS для разных окружений
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Определение приложений
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',  # Защита от различных атак
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Служить статическим файлам
     'django.contrib.sessions.middleware.SessionMiddleware',  # Управление сессиями пользователей
     'django.middleware.common.CommonMiddleware',  # Общие функции (например, нормализация URL)
     'django.middleware.csrf.CsrfViewMiddleware',  # Защита от CSRF атак (подделка запросов)
@@ -135,4 +137,32 @@ REST_FRAMEWORK = {
 LOGIN_REDIRECT_URL = 'home'  # Перенаправление после входа
 LOGOUT_REDIRECT_URL = 'home'  # Перенаправление после выхода
 LOGIN_URL = 'login'  # URL страницы входа
+
+
+# ===== PRODUCTION SETTINGS =====
+
+# Security settings for production
+if not DEBUG:
+    # HTTPS & Cookies Security
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Security headers
+    SECURE_HSTS_SECONDS = 31536000  # 1 год
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Content Security
+    SECURE_CONTENT_SECURITY_POLICY = {
+        "default-src": ("'self'",),
+        "script-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net"),
+        "style-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net"),
+    }
+    
+    # X-Frame-Options (защита от clickjacking)
+    X_FRAME_OPTIONS = 'DENY'
+
+# Static files configuration for WhiteNoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
